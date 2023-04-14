@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.TestNetBoxTv" parent="@style/Theme.Leanback" />
+</resources>
