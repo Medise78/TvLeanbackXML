@@ -1,5 +1,6 @@
 package com.example.testnetboxtv.presenter.ui.home_screen
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -25,6 +26,7 @@ class HomeViewModel @Inject constructor(
     val genreMoviesMap: Flow<Resource<MutableMap<GenresDataDto, Flow<PagingData<GenresMovieData>>>>>
         get() = _genreMoviesMap
 
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     fun fetchGenresMoviesMap() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -41,7 +43,6 @@ class HomeViewModel @Inject constructor(
             } catch (e: Exception) {
                 _genreMoviesMap.tryEmit(Resource.Error(e.message ?: "Error"))
             }
-
         }
     }
 }

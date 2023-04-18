@@ -5,15 +5,21 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.leanback.app.BackgroundManager
 import androidx.lifecycle.lifecycleScope
+import coil.Coil
+import coil.ImageLoader
+import coil.request.ImageRequest
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.squareup.picasso.Picasso
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.lang.Exception
 
 class BackgroundState(private val fragment: Fragment) {
     private val backgroundManager by lazy {
@@ -24,23 +30,33 @@ class BackgroundState(private val fragment: Fragment) {
         }
     }
 
-    private val target = object : CustomTarget<Bitmap>() {
-        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-            backgroundManager.setBitmap(resource)
+    private val target = object : coil.target.Target {
+        override fun onError(error: Drawable?) {
+            super.onError(error)
+            backgroundManager.drawable = error
         }
 
-        override fun onLoadCleared(placeholder: Drawable?) {}
+        override fun onStart(placeholder: Drawable?) {
+            super.onStart(placeholder)
+            backgroundManager.drawable = placeholder
+        }
+
+        override fun onSuccess(result: Drawable) {
+            super.onSuccess(result)
+            backgroundManager.drawable = result
+        }
     }
 
     private var job: Job? = null
     fun loadUrl(url: String) {
+        val imageLoader = ImageLoader(fragment.requireContext())
         job?.cancel()
         job = fragment.lifecycleScope.launch {
-            Glide.with(fragment.requireContext())
-                .asBitmap()
-                .load(url)
-                .centerCrop()
-                .into(target)
+            val request = ImageRequest.Builder(fragment.requireContext())
+                .data(url)
+                .target(target)
+                .build()
+            imageLoader.enqueue(request)
         }
     }
 
@@ -53,6 +69,9 @@ class BackgroundState(private val fragment: Fragment) {
         val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         gradiant.draw(canvas)
-        backgroundManager.setBitmap(bitmap)
+        backgroundManager.apply {
+            setBitmap(bitmap)
+            clearDrawable()
+        }
     }
 }

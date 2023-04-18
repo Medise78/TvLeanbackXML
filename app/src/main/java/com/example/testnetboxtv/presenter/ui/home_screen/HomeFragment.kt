@@ -43,7 +43,6 @@ class HomeFragment : BrowseSupportFragment(), com.example.testnetboxtv.common.Co
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         onItemViewSelectedListener = requireContext().itemViewSelectedListener()
         onItemViewClickedListener = requireContext().itemVewClickedListener(this)
     }

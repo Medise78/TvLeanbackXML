@@ -8,9 +8,14 @@ import android.graphics.drawable.GradientDrawable
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.DetailsSupportFragment
 import androidx.leanback.app.DetailsSupportFragmentBackgroundController
+import androidx.lifecycle.lifecycleScope
+import coil.ImageLoader
+import coil.request.ImageRequest
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class DetailBackgroundState(private val fragment: DetailsSupportFragment) {
 
@@ -21,22 +26,37 @@ class DetailBackgroundState(private val fragment: DetailsSupportFragment) {
             isAutoReleaseOnStop = false
         }
     }
-    private val target = object : CustomTarget<Bitmap>() {
-        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-            detailsBackground.coverBitmap = resource
-            detailsBackground.enableParallax()
+
+    private val target = object : coil.target.Target{
+        override fun onError(error: Drawable?) {
+            super.onError(error)
+            backgroundManager.drawable = error
         }
 
-        override fun onLoadCleared(placeholder: Drawable?) {
+        override fun onStart(placeholder: Drawable?) {
+            super.onStart(placeholder)
+            backgroundManager.drawable = placeholder
+        }
+
+        override fun onSuccess(result: Drawable) {
+            super.onSuccess(result)
+            backgroundManager.drawable = result
         }
     }
 
+    private var job:Job? = null
+
     fun loadUrl(url: String) {
-        Glide.with(fragment.requireContext())
-            .asBitmap()
-            .centerCrop()
-            .load(url)
-            .into<CustomTarget<Bitmap>>(target)
+        val imageLoader = ImageLoader(fragment.requireContext())
+        job?.cancel()
+        job = fragment.lifecycleScope.launch {
+            val request = ImageRequest.Builder(fragment.requireContext())
+                .data(url)
+                .target(target)
+                .crossfade(true)
+                .build()
+            imageLoader.enqueue(request)
+        }
     }
 
     fun emptyBackGround() {
